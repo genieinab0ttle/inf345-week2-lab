@@ -12,7 +12,10 @@ echo "FILES: $(find . -mindepth 1 -type f | wc -l | tr -d ' ')"
 echo "DIRS: $(find . -mindepth 1 -type d | wc -l | tr -d ' ')"
 
 echo "LARGEST:"
-find . -type f -exec stat -f "%z %N" {} + | sed 's|^\./||' | sort -nr | head -n 3
+while IFS= read -r file; do
+  size=$(wc -c < "$file" | tr -d ' ')
+  printf '%s %s\n' "$size" "${file#./}"
+done < <(find . -type f) | sort -nr | head -n 3
 
 echo "EXECUTABLE:"
 find . -type f -perm -100 | sed 's|^\./||' | sort
