@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+DIR="$1"
 
-dir="${1:?usage: report.sh <directory>}"
+if [ -z "$DIR" ] || [ ! -d "$DIR" ]; then
+  exit 1
+fi
 
-echo "FILES: $(find "$dir" -type f | wc -l)"
-echo "DIRS: $(find "$dir" -mindepth 1 -type d | wc -l)"
+cd "$DIR" || exit 1
+
+echo "FILES: $(find . -mindepth 1 -type f | wc -l | tr -d ' ')"
+echo "DIRS: $(find . -mindepth 1 -type d | wc -l | tr -d ' ')"
 
 echo "LARGEST:"
-find "$dir" -type f -exec stat -f "%z %N" {} \; | sort -nr | head -3 | sed "s|$dir/||"
+find . -type f -exec stat -f "%z %N" {} + | sed 's|^\./||' | sort -nr | head -n 3
 
 echo "EXECUTABLE:"
-find "$dir" -type f -perm -u+x | sed "s|$dir/||" | sort
+find . -type f -perm -100 | sed 's|^\./||' | sort
 
 echo "EXTENSIONS:"
-find "$dir" -type f | sed 's|.*/||' | grep '\.' | sed 's/.*\.//' | sort | uniq -c | sort -nr | head -5 | awk '{print $1 " ." $2}'
+find . -type f -name "*.*" | awk -F. 'NF>1 {print $NF}' | sort | uniq -c | sort -nr -k1,1 -k2,2 | head -n 5 | awk '{print $1 " ." $2}'
